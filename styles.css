@@ -1,0 +1,344 @@
+.ig-video-seeker-bar {
+  position: fixed;
+  z-index: 2147483646;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  height: 28px;
+  box-sizing: border-box;
+  padding: 4px 8px;
+  border-radius: 999px;
+
+  background: rgba(0, 0, 0, 0.78);
+  color: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  line-height: 1;
+
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+
+  transition: opacity 0.12s ease;
+}
+
+.ig-video-seeker-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ig-video-seeker-progress {
+  flex: 1 1 auto;
+  min-width: 80px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #ffffff;
+}
+
+.ig-video-seeker-time {
+  flex: 0 0 auto;
+  min-width: 72px;
+  color: rgba(255, 255, 255, 0.92);
+  text-align: right;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.ig-video-seeker-volume-icon {
+  flex: 0 0 auto;
+  width: 18px;
+  text-align: center;
+  font-size: 12px;
+  user-select: none;
+}
+
+.ig-video-seeker-volume {
+  flex: 0 0 72px;
+  width: 72px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #ffffff;
+}
+
+.ig-video-seeker-fullscreen,
+.ig-video-seeker-media-fullscreen {
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  cursor: pointer;
+
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+
+  font-family: Arial, sans-serif;
+  text-align: center;
+  user-select: none;
+}
+
+.ig-video-seeker-fullscreen {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 22px;
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.ig-video-seeker-media-fullscreen {
+  position: fixed;
+  z-index: 2147483646;
+  width: 34px;
+  height: 34px;
+  font-size: 19px;
+  line-height: 34px;
+
+  opacity: 0;
+  pointer-events: none;
+
+  background: rgba(0, 0, 0, 0.68);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+
+.ig-video-seeker-media-fullscreen-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ig-video-seeker-fullscreen:hover,
+.ig-video-seeker-media-fullscreen:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.ig-video-seeker-media-fullscreen:hover {
+  background: rgba(0, 0, 0, 0.82);
+}
+
+.ig-video-seeker-fullscreen:active,
+.ig-video-seeker-media-fullscreen:active {
+  transform: scale(0.96);
+}
+
+.ig-video-seeker-clean-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100vw;
+  height: 100vh;
+  background: #000000;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.ig-video-seeker-clean-stage {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 100%;
+  background: #000000;
+}
+
+.ig-video-seeker-clean-media {
+  display: block;
+  max-width: 100vw;
+  max-height: 100vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  background: #000000;
+}
+
+video.ig-video-seeker-clean-media {
+  width: 100vw;
+  height: 100vh;
+}
+
+
+.ig-video-seeker-clean-bar {
+  position: fixed !important;
+  left: 50% !important;
+  top: auto !important;
+  bottom: 18px !important;
+  z-index: 2 !important;
+
+  width: min(560px, calc(100vw - 28px)) !important;
+  max-width: calc(100vw - 28px) !important;
+  transform: translateX(-50%) !important;
+
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.ig-video-seeker-clean-launcher {
+  position: fixed !important;
+  left: 50% !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: 18px !important;
+  z-index: 2 !important;
+
+  width: 42px !important;
+  height: 42px !important;
+  flex: 0 0 auto !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  padding: 0 !important;
+
+  background: rgba(0, 0, 0, 0.45) !important;
+  color: #ffffff !important;
+  cursor: pointer !important;
+
+  font-family: Arial, sans-serif !important;
+  font-size: 22px !important;
+  line-height: 42px !important;
+  text-align: center !important;
+  user-select: none !important;
+
+  opacity: 0.75 !important;
+  pointer-events: auto !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  transform: translateX(-50%) !important;
+  transition: opacity 0.12s ease, background 0.12s ease, transform 0.12s ease !important;
+}
+
+.ig-video-seeker-clean-launcher:hover {
+  opacity: 1 !important;
+  background: rgba(0, 0, 0, 0.8) !important;
+}
+
+.ig-video-seeker-clean-launcher:active {
+  transform: translateX(-50%) scale(0.96) !important;
+}
+
+.ig-video-seeker-clean-viewer:fullscreen,
+.ig-video-seeker-clean-viewer:-webkit-full-screen {
+  background: #000000 !important;
+}
+
+.ig-video-seeker-clean-viewer:fullscreen .ig-video-seeker-clean-stage,
+.ig-video-seeker-clean-viewer:-webkit-full-screen .ig-video-seeker-clean-stage {
+  background: #000000 !important;
+}
+
+@media (max-width: 700px) {
+  .ig-video-seeker-volume {
+    flex-basis: 52px;
+    width: 52px;
+  }
+
+  .ig-video-seeker-time {
+    min-width: 60px;
+    font-size: 11px;
+  }
+}
+
+.ig-video-seeker-clean-nav {
+  position: fixed;
+  top: 50%;
+  z-index: 1;
+
+  width: 56px;
+  height: 78px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 0 7px 0;
+
+  background: rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+  cursor: pointer;
+
+  font-family: Arial, sans-serif;
+  font-size: 72px;
+  font-weight: 300;
+  line-height: 64px;
+  text-align: center;
+
+  opacity: 0.55;
+  transform: translateY(-50%);
+  transition: opacity 0.12s ease, background 0.12s ease, transform 0.12s ease;
+}
+
+.ig-video-seeker-clean-prev {
+  left: 18px;
+}
+
+.ig-video-seeker-clean-next {
+  right: 18px;
+}
+
+.ig-video-seeker-clean-nav:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.ig-video-seeker-clean-nav:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+.ig-video-seeker-clean-nav:disabled {
+  opacity: 0.18;
+  cursor: default;
+}
+
+.ig-video-seeker-clean-counter {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  z-index: 1;
+
+  padding: 7px 11px;
+  border-radius: 999px;
+
+  background: rgba(0, 0, 0, 0.45);
+  color: #ffffff;
+
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1;
+  transform: translateX(-50%);
+  opacity: 0.7;
+  user-select: none;
+}
+
+.ig-video-seeker-clean-viewer .ig-video-seeker-clean-stage > video {
+  display: block !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  object-fit: contain !important;
+  background: #000000 !important;
+}
+
+@media (max-width: 700px) {
+  .ig-video-seeker-clean-nav {
+    width: 42px;
+    height: 60px;
+    font-size: 54px;
+    line-height: 50px;
+  }
+
+  .ig-video-seeker-clean-prev {
+    left: 8px;
+  }
+
+  .ig-video-seeker-clean-next {
+    right: 8px;
+  }
+}

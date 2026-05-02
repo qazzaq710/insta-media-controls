@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Insta Media Controls",
+  "version": "1.7.9",
+  "description": "Adds a progress bar, volume control, clean media viewer and carousel navigation for Instagram videos, photos and stories.",
+  "host_permissions": [
+    "https://www.instagram.com/*",
+    "https://instagram.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.instagram.com/*",
+        "https://instagram.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "short_name": "Media Controls",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
