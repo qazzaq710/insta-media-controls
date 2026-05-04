@@ -4,11 +4,14 @@
   const VOLUME_STEP = 0.05;
   const SCAN_INTERVAL_MS = 650;
   const UI_INTERVAL_MS = 150;
+  const BACKGROUND_RESUME_INTERVAL_MS = 1200;
+  const USER_PLAYBACK_ACTION_GRACE_MS = 1600;
   const STORAGE_VOLUME_KEY = "ig_video_seeker_volume";
 
   let bar = null;
   let progress = null;
   let timeLabel = null;
+  let playPauseButton = null;
   let volume = null;
   let volumeIcon = null;
   let fullscreenButton = null;
@@ -27,6 +30,7 @@
   let cleanViewerPrevButton = null;
   let cleanViewerNextButton = null;
   let cleanViewerCounter = null;
+  let cleanViewerCenterPlayButton = null;
   let cleanViewerRequestedFullscreen = false;
   let cleanViewerItems = [];
   let cleanViewerIndex = 0;
@@ -36,6 +40,9 @@
   let cleanViewerLauncherButton = null;
   let cleanViewerLauncherRestore = null;
   let cleanViewerLauncherToggleHandler = null;
+  let backgroundPlaybackVideo = null;
+  let backgroundPlaybackWanted = false;
+  let lastUserPlaybackActionAt = 0;
 
   function readSavedVolume() {
     const raw = localStorage.getItem(STORAGE_VOLUME_KEY);
@@ -97,7 +104,7 @@
 
   function isInsideOwnUI(element) {
     return Boolean(element?.closest?.(
-      ".ig-video-seeker-bar, .ig-video-seeker-media-fullscreen, .ig-video-seeker-clean-viewer"
+      ".ig-video-seeker-bar, .ig-video-seeker-media-fullscreen, .ig-video-seeker-clean-viewer, .ig-video-seeker-clean-playpause"
     ));
   }
 
@@ -262,6 +269,99 @@
     }
   }
 
+  function getActiveVideo() {
+    return cleanViewerMedia?.tagName?.toLowerCase() === "video"
+      ? cleanViewerMedia
+      : chooseVideo();
+  }
+
+  function rememberVideoForBackgroundPlayback(video, shouldContinue) {
+    if (!video || video.tagName?.toLowerCase() !== "video") return;
+
+    backgroundPlaybackVideo = video;
+    backgroundPlaybackWanted = Boolean(shouldContinue);
+  }
+
+  function toggleVideoPlayback(video = getActiveVideo()) {
+    if (!video) return;
+
+    lastUserPlaybackActionAt = Date.now();
+
+    try {
+      if (video.paused || video.ended) {
+        rememberVideoForBackgroundPlayback(video, true);
+        video.play().catch(() => {});
+      } else {
+        rememberVideoForBackgroundPlayback(video, false);
+        video.pause();
+      }
+    } catch (_) {
+      // Ignore safely. Instagram may rebuild or lock a media node.
+    }
+
+    updateUI();
+  }
+
+  function getBackgroundPlaybackVideo() {
+    if (backgroundPlaybackVideo?.isConnected) return backgroundPlaybackVideo;
+
+    const active = getActiveVideo();
+    if (active?.isConnected) return active;
+
+    return chooseVideo();
+  }
+
+  function isPageActuallyHidden() {
+    return document.hidden || document.visibilityState === "hidden" || !document.hasFocus?.();
+  }
+
+  function resumeBackgroundPlayback(video = getBackgroundPlaybackVideo()) {
+    if (!video || video.tagName?.toLowerCase() !== "video") return;
+    if (!backgroundPlaybackWanted) return;
+    if (!isPageActuallyHidden()) return;
+    if (video.ended) return;
+    if (Date.now() - lastUserPlaybackActionAt < USER_PLAYBACK_ACTION_GRACE_MS) return;
+
+    try {
+      setDefaultSound(video);
+      if (video.paused) {
+        video.play().catch(() => {});
+      }
+    } catch (_) {
+      // Ignore safely. The page may rebuild the media node while hidden.
+    }
+  }
+
+  function scheduleBackgroundPlaybackResume(video = getBackgroundPlaybackVideo()) {
+    if (!backgroundPlaybackWanted) return;
+
+    window.setTimeout(() => resumeBackgroundPlayback(video), 40);
+    window.setTimeout(() => resumeBackgroundPlayback(video), 350);
+    window.setTimeout(() => resumeBackgroundPlayback(video), 900);
+  }
+
+  function updatePlayPauseButtons(video = getActiveVideo()) {
+    const hasVideo = Boolean(video);
+    const isPaused = hasVideo ? (video.paused || video.ended) : false;
+    const label = isPaused ? "Воспроизвести видео" : "Поставить видео на паузу";
+    const icon = isPaused ? "▶" : "⏸";
+
+    if (playPauseButton) {
+      playPauseButton.textContent = icon;
+      playPauseButton.title = label;
+      playPauseButton.setAttribute("aria-label", label);
+      playPauseButton.hidden = !hasVideo;
+    }
+
+    if (cleanViewerCenterPlayButton) {
+      cleanViewerCenterPlayButton.textContent = icon;
+      cleanViewerCenterPlayButton.removeAttribute("title");
+      cleanViewerCenterPlayButton.setAttribute("aria-label", label);
+      cleanViewerCenterPlayButton.hidden = !(cleanViewerOverlay && hasVideo);
+      cleanViewerCenterPlayButton.classList.toggle("ig-video-seeker-clean-playpause-paused", isPaused);
+    }
+  }
+
   function seekBy(seconds, video = chooseVideo()) {
     if (!video) return;
 
@@ -279,7 +379,7 @@
   }
 
   function changeVolume(delta) {
-    const video = cleanViewerMedia?.tagName?.toLowerCase() === "video" ? cleanViewerMedia : chooseVideo();
+    const video = getActiveVideo();
     if (!video) return;
 
     const nextVolume = clamp((video.volume || savedVolume || 0) + delta, 0, 1);
@@ -740,6 +840,7 @@
       try {
         video.volume = savedVolume;
         if (savedVolume > 0) video.muted = false;
+        rememberVideoForBackgroundPlayback(video, true);
         video.play().catch(() => {});
       } catch (_) {
         // Ignore safely.
@@ -896,6 +997,7 @@
     cleanViewerPrevButton = null;
     cleanViewerNextButton = null;
     cleanViewerCounter = null;
+    cleanViewerCenterPlayButton = null;
     cleanViewerRequestedFullscreen = false;
     cleanViewerItems = [];
     cleanViewerIndex = 0;
@@ -942,13 +1044,21 @@
     const counter = document.createElement("div");
     counter.className = "ig-video-seeker-clean-counter";
 
+    const centerPlayButton = document.createElement("button");
+    centerPlayButton.className = "ig-video-seeker-clean-playpause";
+    centerPlayButton.type = "button";
+    centerPlayButton.textContent = "⏸";
+    centerPlayButton.removeAttribute("title");
+    centerPlayButton.setAttribute("aria-label", "Поставить видео на паузу");
+
     cleanViewerOverlay = overlay;
     cleanViewerStage = stage;
     cleanViewerPrevButton = prevButton;
     cleanViewerNextButton = nextButton;
     cleanViewerCounter = counter;
+    cleanViewerCenterPlayButton = centerPlayButton;
 
-    overlay.append(stage, prevButton, nextButton, counter);
+    overlay.append(stage, prevButton, nextButton, counter, centerPlayButton);
     document.documentElement.appendChild(overlay);
     attachLauncherControlToViewer(launcherButton, overlay);
 
@@ -967,6 +1077,12 @@
       navigateCleanViewer(1);
     });
 
+    centerPlayButton.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleVideoPlayback(cleanViewerMedia?.tagName?.toLowerCase() === "video" ? cleanViewerMedia : null);
+    });
+
     overlay.addEventListener("click", (event) => {
       if (event.target === overlay || event.target === stage) {
         closeCleanViewer(true);
@@ -977,6 +1093,12 @@
       if (event.key === "Escape") {
         event.preventDefault();
         closeCleanViewer(true);
+        return;
+      }
+
+      if (event.key === " " || event.code === "Space") {
+        event.preventDefault();
+        toggleVideoPlayback(cleanViewerMedia?.tagName?.toLowerCase() === "video" ? cleanViewerMedia : null);
         return;
       }
 
@@ -1050,6 +1172,13 @@
       timeLabel.className = "ig-video-seeker-time";
       timeLabel.textContent = "0:00 / 0:00";
 
+      playPauseButton = document.createElement("button");
+      playPauseButton.className = "ig-video-seeker-playpause";
+      playPauseButton.type = "button";
+      playPauseButton.textContent = "⏸";
+      playPauseButton.title = "Поставить видео на паузу";
+      playPauseButton.setAttribute("aria-label", "Поставить видео на паузу");
+
       volumeIcon = document.createElement("div");
       volumeIcon.className = "ig-video-seeker-volume-icon";
       volumeIcon.textContent = "🔊";
@@ -1071,7 +1200,7 @@
       fullscreenButton.title = "Открыть только видео/сторис без интерфейса";
       fullscreenButton.setAttribute("aria-label", "Открыть только видео/сторис без интерфейса");
 
-      bar.append(progress, timeLabel, volumeIcon, volume, fullscreenButton);
+      bar.append(playPauseButton, progress, timeLabel, volumeIcon, volume, fullscreenButton);
       document.documentElement.appendChild(bar);
 
       const stop = (event) => {
@@ -1083,12 +1212,23 @@
       bar.addEventListener("pointerup", stop);
       bar.addEventListener("keydown", stop);
 
+      playPauseButton.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleVideoPlayback();
+      });
+
+      playPauseButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      });
+
       progress.addEventListener("pointerdown", () => {
         isDraggingProgress = true;
       });
 
       progress.addEventListener("input", () => {
-        const video = cleanViewerMedia?.tagName?.toLowerCase() === "video" ? cleanViewerMedia : chooseVideo();
+        const video = getActiveVideo();
         if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return;
 
         const ratio = Number(progress.value) / 1000;
@@ -1106,7 +1246,7 @@
       window.addEventListener("pointerup", stopDragging, true);
 
       volume.addEventListener("input", () => {
-        const video = cleanViewerMedia?.tagName?.toLowerCase() === "video" ? cleanViewerMedia : chooseVideo();
+        const video = getActiveVideo();
         const nextVolume = clamp(Number(volume.value), 0, 1);
         saveVolume(nextVolume);
 
@@ -1263,6 +1403,7 @@
     updateVideoBarPosition(video);
     updateMediaButtonPosition(media);
     updateFullscreenButtonsState();
+    updatePlayPauseButtons(video);
 
     if (!video) return;
 
@@ -1298,6 +1439,12 @@
     const key = event.key.toLowerCase();
     const seekStep = event.shiftKey ? SEEK_STEP_BIG : SEEK_STEP_SMALL;
 
+    if (event.key === " " || event.code === "Space" || key === "k") {
+      event.preventDefault();
+      toggleVideoPlayback();
+      return;
+    }
+
     if (event.key === "ArrowLeft" || key === "j") {
       event.preventDefault();
       seekBy(-seekStep);
@@ -1327,11 +1474,16 @@
     updateUI();
 
     document.addEventListener("keydown", handleHotkeys, true);
+    document.addEventListener("visibilitychange", () => scheduleBackgroundPlaybackResume(), true);
+    document.addEventListener("webkitvisibilitychange", () => scheduleBackgroundPlaybackResume(), true);
+    window.addEventListener("blur", () => scheduleBackgroundPlaybackResume(), true);
+    window.addEventListener("pagehide", () => scheduleBackgroundPlaybackResume(), true);
 
     document.addEventListener("play", (event) => {
       if (event.target?.tagName?.toLowerCase() === "video" && !isInsideOwnUI(event.target)) {
         currentVideo = event.target;
         currentMedia = { type: "video", element: event.target };
+        rememberVideoForBackgroundPlayback(currentVideo, true);
         setDefaultSound(currentVideo);
         updateUI();
       }
@@ -1342,6 +1494,24 @@
         currentVideo = event.target;
         currentMedia = { type: "video", element: event.target };
         setDefaultSound(currentVideo);
+        updateUI();
+      }
+    }, true);
+
+    document.addEventListener("pause", (event) => {
+      if (event.target?.tagName?.toLowerCase() === "video" && !isInsideOwnUI(event.target)) {
+        if (isPageActuallyHidden() && backgroundPlaybackWanted) {
+          scheduleBackgroundPlaybackResume(event.target);
+        } else if (Date.now() - lastUserPlaybackActionAt >= USER_PLAYBACK_ACTION_GRACE_MS) {
+          rememberVideoForBackgroundPlayback(event.target, false);
+        }
+
+        updateUI();
+      }
+    }, true);
+
+    document.addEventListener("ended", (event) => {
+      if (event.target?.tagName?.toLowerCase() === "video" && !isInsideOwnUI(event.target)) {
         updateUI();
       }
     }, true);
@@ -1372,6 +1542,10 @@
       if (cleanViewerOverlay) updateCleanViewerControls();
       updateUI();
     }, UI_INTERVAL_MS);
+
+    setInterval(() => {
+      resumeBackgroundPlayback();
+    }, BACKGROUND_RESUME_INTERVAL_MS);
   }
 
   boot();
