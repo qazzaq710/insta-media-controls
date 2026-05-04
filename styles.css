@@ -64,6 +64,7 @@
   accent-color: #ffffff;
 }
 
+.ig-video-seeker-playpause,
 .ig-video-seeker-fullscreen,
 .ig-video-seeker-media-fullscreen {
   border: 0;
@@ -79,6 +80,7 @@
   user-select: none;
 }
 
+.ig-video-seeker-playpause,
 .ig-video-seeker-fullscreen {
   flex: 0 0 auto;
   width: 24px;
@@ -110,6 +112,7 @@
   pointer-events: auto;
 }
 
+.ig-video-seeker-playpause:hover,
 .ig-video-seeker-fullscreen:hover,
 .ig-video-seeker-media-fullscreen:hover {
   background: rgba(255, 255, 255, 0.24);
@@ -119,6 +122,7 @@
   background: rgba(0, 0, 0, 0.82);
 }
 
+.ig-video-seeker-playpause:active,
 .ig-video-seeker-fullscreen:active,
 .ig-video-seeker-media-fullscreen:active {
   transform: scale(0.96);
@@ -324,6 +328,54 @@ video.ig-video-seeker-clean-media {
   max-height: 100vh !important;
   object-fit: contain !important;
   background: #000000 !important;
+}
+
+.ig-video-seeker-clean-playpause {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+
+  width: min(34vw, 320px);
+  height: min(34vh, 320px);
+  min-width: 96px;
+  min-height: 96px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+
+  background: transparent !important;
+  color: transparent !important;
+  cursor: default;
+
+  font-size: 0;
+  line-height: 0;
+  text-align: center;
+  user-select: none;
+
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ig-video-seeker-clean-playpause:hover,
+.ig-video-seeker-clean-playpause:focus,
+.ig-video-seeker-clean-playpause-paused {
+  opacity: 0;
+  background: transparent !important;
+  color: transparent !important;
+  box-shadow: none !important;
+}
+
+.ig-video-seeker-clean-playpause:active {
+  transform: translate(-50%, -50%);
+}
+
+.ig-video-seeker-clean-playpause[hidden] {
+  display: none !important;
 }
 
 @media (max-width: 700px) {
